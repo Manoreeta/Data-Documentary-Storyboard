@@ -1,0 +1,430 @@
+---
+title: "Storyboard of Social Media Analysis"
+output: 
+   flexdashboard::flex_dashboard:
+     storyboard: true
+---
+
+Page 1 {.storyboard}
+========================================
+
+### Frame 1: Introduction
+
+In the technological advancement era, there are various of medium to communicate with each other. 
+
+One of them is social media platform. People are freely posting and interacting with each other in social media.
+
+Social media platform includes Facebook, Instagram, Youtube, Twitter and the list goes on.
+
+So, in order to study on the various aspects of social media, I came up with this Social Media topic.
+
+The main aim of this study is to gather the useful insights from different data related to social media platforms and present it into meaningful visualization of charts.
+
+The data was gathered from Kaggle website. 
+
+There are 5 separate dataset related to the study such as:
+
+- Instagram influencers 
+- Top 1000 Tiktokers
+- Top 200 Youtubers
+- Social Media (general)
+- Social Media Related Incidents
+
+There are 10 charts altogether representing variety of useful informations to analyse the social media dataset. 
+
+### Frame 2: Top 10 Instagram Account Category
+```{r}
+library(ggplot2)
+library(dplyr)
+SC1 <- read.csv(file.choose())
+SC1_new <- data.frame(SC1$category_1,SC1$Followers,SC1$Audience.country.mostly,SC1$Engagement.avg)
+SC1_new[,2] <- as.numeric(gsub("[,M]","",SC1_new[,2]))
+SC1_new[,4] <- as.numeric(gsub("[,K]","",SC1_new[,4]))
+SC1_new <- na.omit(SC1_new)
+SC1_new$SC1.Engagement.avg[is.na(SC1_new$SC1.Engagement.avg)] <- mean(SC1_new$SC1.Engagement.avg, na.rm = TRUE)
+SC1_new <- na.omit(SC1_new)
+names(SC1_new) <- c("category", "followers", "aud.country", "engagement.avg")
+SC1_new1 <- SC1_new %>% group_by(category) %>% summarize(followers=mean(followers))
+SC1_new2 <- SC1_new1 %>%                                     
+arrange(desc(followers)) %>% 
+group_by(category)%>% select("category","followers")
+cate <- head(SC1_new2,10)
+
+ggplot(cate,aes(x="",y=followers,fill=factor(category)))+
+	geom_bar(width=1, stat="identity") +
+	geom_text(aes(label=paste(round(followers/sum(followers)*100,1),"%")),
+			position=position_stack(vjust=0.5),size=3)+
+	theme_classic()+
+	theme(plot.title = element_text(hjust=0.5),
+		axis.line = element_blank(),
+		axis.text = element_blank(),
+		axis.ticks = element_blank()) +
+	labs(fill = "Instagram Account Category",
+		x = NULL,
+		y = NULL,
+		title = "Top 10 IG Followers by Category") +
+	coord_polar("y")
+```
+
+***
+
+The Pie Chart represents the percentage of followers by instagram account category for the top 10 highest followers account.
+The obtained top 10 instagram account categories with highest followers are such as Sports with a ball, Music, Food & Cooking, Luxury,
+Finance & Economics, Fitness & Gym, Science, Accessories & Jewellery, Nature & landscapes and Photography in ascending order. 
+So, based on the Pie Chart, Instagram users of Photography category has the highest followers among the other categories. 
+It is obvious that instagram is a social media platform for posting pictures hence this might be the reason for the highest followers 
+for the Photography account users category. On the other hand, there are fewer followers for the category such as Sports with a ball, 
+Music and Food & Cooking. This indicates those categories are among the less interesting category to be followed by other IG users.
+
+### Frame 3: Density plot of Distribution of Followers by Country
+```{r}
+library(hrbrthemes)
+library(ggplot2)
+library(dplyr)
+
+SC1 <- read.csv(file.choose())
+SC1_new <- data.frame(SC1$category_1,SC1$Followers,SC1$Audience.country.mostly,SC1$Engagement.avg)
+SC1_new[,2] <- as.numeric(gsub("[,M]","",SC1_new[,2]))
+SC1_new[,4] <- as.numeric(gsub("[,K]","",SC1_new[,4]))
+SC1_new <- na.omit(SC1_new)
+SC1_new$SC1.Engagement.avg[is.na(SC1_new$SC1.Engagement.avg)] <- mean(SC1_new$SC1.Engagement.avg, na.rm = TRUE)
+SC1_new <- na.omit(SC1_new)
+names(SC1_new) <- c("category", "followers", "aud.country", "engagement.avg")
+SC1_new1 <- SC1_new[order(SC1_new$followers),]
+SC1_new1a <- head(SC1_new1,50)
+
+ggplot(data=SC1_new1a, aes(x=followers, group=aud.country, fill=aud.country)) +
+    geom_density(adjust=1.5,alpha=0.8) +
+    theme_ipsum()+xlim(0,10)+labs(fill="Audience Country")
+```
+
+*** 
+
+Density plot shown is to visualize the distibution of followers based on the audience country. It can be seen that countries like Iran 
+and Japan mostly consists of average number of followers (not too high and not too low) while countries like United States and South Korea
+shows a lower density for the average number of followers. This indicates that instagram influencers accounts mostly are followed
+by peoples from countries like Iran and Japan. So, as a suggestion in order to increase the number of followers from lesser audience countries 
+like United States and South Korea, the instagram influencers may try to create content that related to those countries so that 
+it will attract more followers from those countries.
+
+### Frame 4: Grouped Line Plot of Number of Subcribers, Comments and Shares by User Name
+```{r}
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+SC2 <- read.csv(file.choose())
+SC2[,5] <- as.numeric(gsub("[,M]","",SC2[,5]))
+SC2[,6] <- as.numeric(gsub("[,M]","",SC2[,6]))
+SC2[,7] <- as.numeric(gsub("[,M]","",SC2[,7]))
+SC2[,8] <- as.numeric(gsub("[,K]","",SC2[,8]))
+SC2[,9] <- as.numeric(gsub("[,K]","",SC2[,9]))
+SC2_new <- SC2
+SC2_new$Views..Avg[is.na(SC2_new$Views..Avg)] <- mean(SC2_new$Views..Avg, na.rm = TRUE)
+SC2_new$Subscribers.Count[is.na(SC2_new$Subscribers.Count)] <- mean(SC2_new$Subscribers.Count, na.rm = TRUE)
+
+SC2_new1 = pivot_longer(SC2_new, cols = c("Subscribers.Count",
+"Comments..Avg","Shares..Avg"),
+names_to = "SubsCommShare",
+values_to = "SubsCommShare_count")
+SC2_top <- head(SC2_new1,30)
+
+ggplot(SC2_top,aes(x=Name,y=as.numeric(SubsCommShare_count),colour=SubsCommShare,
+group=SubsCommShare))+
+xlab("User Name")+
+ylab("Number of Subcribers,Comments & Shares")+
+labs(colour="Subcribers,Comments & Shares")+
+scale_colour_discrete(labels=c("Comments","Shares","Subscribers"))+
+theme(axis.text.x=element_text(angle=45,hjust=0.5,vjust=0.5))+
+geom_line()+geom_point(shape=19,size=3,colour="pink")
+```
+
+***
+
+The plot shown is a grouped line graph each represent the number of comments, shares and subscribers according to the tik tok account name
+with top 10 followers. Firstly, the highest comments was obtained by Cooper Noriega followed by Bad Bunny. Secondly, the highest shares 
+of post was obtained by Bad Bunny and Daniel LaBella. Then, the highest subscribers was obtained by Khabane lame and charli dae amelio. 
+So, based on this three different aspects, it can be seen that none of the name appeared in all three categories. Eventhough Bad Bunny 
+appeared in both highest comment and highest shares but the name was not in the highest subscriber category, so it is not 
+adequate to conclude based on only one observation. Hence, it can be concluded that all three categories sucha as comments, shares and subscribers 
+are not linked to each other. Meaning that, an increase or decrease in any one variable does'nt mean that the other two variables will be affected. 
+So, the popularity of a tiktoker can't be concluded that they will have high comments, high shares or high subscriber however it can be 
+high in one aspect but low in another aspect. This might be because of the type of content where some content people are more keen to just share 
+without subscribing the user account. 
+
+### Frame 5: Boxplot of Number of Subscribers, Comments and Shares by  Category
+```{r}
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+SC2 <- read.csv(file.choose())
+SC2[,5] <- as.numeric(gsub("[,M]","",SC2[,5]))
+SC2[,6] <- as.numeric(gsub("[,M]","",SC2[,6]))
+SC2[,7] <- as.numeric(gsub("[,M]","",SC2[,7]))
+SC2[,8] <- as.numeric(gsub("[,K]","",SC2[,8]))
+SC2[,9] <- as.numeric(gsub("[,K]","",SC2[,9]))
+SC2_new <- SC2
+SC2_new$Views..Avg[is.na(SC2_new$Views..Avg)] <- mean(SC2_new$Views..Avg, na.rm = TRUE)
+SC2_new$Subscribers.Count[is.na(SC2_new$Subscribers.Count)] <- mean(SC2_new$Subscribers.Count, na.rm = TRUE)
+
+SC2_new1 = pivot_longer(SC2_new, cols = c("Subscribers.Count",
+"Comments..Avg","Shares..Avg"),
+names_to = "SubsCommShare",
+values_to = "SubsCommShare_count")
+
+top2 <- head(SC2_new1,20)
+ggplot(top2,aes(x=factor(SubsCommShare),y=SubsCommShare_count,fill=factor(SubsCommShare)))+
+xlab("Subsribers,Comments & Shares")+ylab("Number of Subsribers,Comments & Shares")+
+labs(fill="Subsribers,Comments & Shares")+
+scale_fill_discrete(labels=c("Comments","Shares","Subscribers"))+
+scale_x_discrete(labels=c("Comments","Shares","Subscribers"))+
+geom_boxplot()
+```
+
+***
+
+In order to understand the followers interest on the content, a boxplot with three boxes was plotted to visualize the different counts for all
+three categories that are number of comments, shares and subscribers. It can be seen that top tiktokers gains more comments on their post compared 
+to getting their contents being shared or getting new subscribers. This might be from both positive and negative aspects. In a positive aspect, the 
+higher comments might be for contents that related to achivement or commenting on favourite artist's post while from the negative aspect, the higher 
+comments on the top tiktokers post might be for the contents that made the users to express their disagreement, anger, making fun of and so on. 
+So, tiktokers with high number of followers has higher comments on their post. This might indicate that those people having more comments on their 
+posts might be a well-known person such as a famous Football Player, Actor, Author and so on.
+
+
+### Frame 6: Stacked Bar Plot of Followers versus Main Video Category by Country
+```{r}
+
+library(dplyr)
+library(ggplot2)
+SC3 <- read.csv(file.choose())
+SC3_new2 <- SC3[order(SC3$followers),]
+SC3_new2b <- tail(SC3_new2,500)
+
+ggplot(data=SC3_new2b, aes(x=Main.Video.Category,y=followers,fill=factor(Country))) + 
+geom_bar(stat="identity")+xlab("Followers")+ylab("Main Video Category")+
+labs(fill="Country")+coord_flip()
+```
+
+***
+
+Next, based on the top 200 Youtubers dataset, a stacked bar chart of youtube video cateogory versus number of followers according to the followers 
+country as the categorical variable was plotted. Based on the stacked bar, Music videos has the highest followers compared to the others. The biggest 
+portion of the bar representing Music consists of the followers from India (IN). This indicates that mostly followers from India are interested
+in following Music videos contents on Youtube compared to the other categories. Next, the second
+highest followers are for the entertainment videos indicating that mostly United States (US) people are interested in following the entertainment related 
+video on youtube compared to other video categories. Hence, in overall, a country's culture determines the residence's interest towards different category.
+This is because, there are so many music industries in India and this might the reason why people from India shows more interest in following Music related 
+Youtubers compared to the other categories. Same goes to US where US is a developed country that has more entertainment industries such as games, shows and 
+so on.
+
+### Frame 7: Stacked Bar Plot of Engagement Rate versus Main Video Category by Country
+```{r}
+library(dplyr)
+library(ggplot2)
+SC3 <- read.csv(file.choose())
+SC3_new2 <- SC3[order(SC3$followers),]
+SC3_new2b <- tail(SC3_new2,500)
+
+ggplot(data=SC3_new2b, aes(x=Main.Video.Category,y=Engagement.Rate,fill=factor(Country)))+ 
+geom_bar(stat="identity")+xlab("Engagement Rate")+ylab("Main Video Category")+
+labs(fill="Country")+coord_flip()
+```
+
+***
+
+On the other hand, analyzing the engagement rate for each video category based on the country. Engagement rate is to measure how the followers are actively 
+connected to the Youtubers or with the content from the youtube video includes like, share, comment, download, subscribe and so on. In this aspect, Music 
+videos has the highest engagement rate with most of the followers are from Puerto Rico (PR) while least followers from Canada (CA). The second highest engagement 
+rate is under entertainment and mostly followers from US. So, as to sum up both the followers and engagement rate, it can be seen that higher followers 
+is associated with higher engagement rate. This indicates that a Youtube channel that has higher followers has a high possibility to be engaged with the audience 
+better compared to the one with low followers. This might be because of the Youtuber's intension to connect with the followers in order to make more followers or 
+to maintain their existing followers. 
+
+### Frame 8: Scatter Plot of Number of Engagement versus User in Daily, Weekly and Monthly Basis
+```{r}
+library(ggplot2)
+library(cowplot)
+SC4 <- read.csv(file.choose())
+
+names(SC4) <- c("Date","Daily_Eng","Monthly_Eng","Weekly_Eng",
+"Lifetime.Total.Likes","Daily_Reach","Weekly_Reach","Monthly_Reach")
+
+w <- ggplot(SC4,aes(x=Weekly_Reach,y=Weekly_Eng))+
+geom_point(shape=21,size=3,fill="turquoise",colour="lightblue")
+
+d <- ggplot(SC4,aes(x=Daily_Reach,y=Daily_Eng))+
+geom_point(shape=21,size=3,fill="green",colour="green")
+
+m <- ggplot(SC4,aes(x=Monthly_Reach,y=Monthly_Eng))+
+geom_point(shape=21,size=3,fill="steelblue",colour="steelblue")
+
+plot_grid(d, w, m, labels=c("Daily", "Weekly", "Monthly"),ncol = 1, nrow = 3,
+label_size = 10, hjust = -3, vjust = 0.9)
+```
+
+***
+
+The chart shows a combined plot of 3 scatter plots obtained from a individual social media account.The first scatter plot is the number of daily engagement versus daily 
+reach, second plot is the number of weekly engagement versus weekly reach and the third plot is the number of monthly engagement versus monthly reach. The number of 
+engagement and number of reach were plotted separated in daily, weekly and monthly aspect in order to identify the trend for each aspect. Eventhough all three plots
+seem to have a linear relationship between the number of engagement and reach, however, observing the plots individually shows the differences between each plot.
+In the first plot, it can be seen that most of the points are accumulated near to the origin indicates that in daily aspect, the engagement between the account user and 
+the followers are very less in daily basis. Same goes to the monthly plot, where the points are accumulated at the lowest and highest values of the plots. So, based on the plot, 
+it can be seen that in weekly basis there is a good linear relationship between the number of user and engagement. Meaning that, the engagement between the user and the followers 
+are quite good in weekly basis compared to daily and monthly. 
+
+### Frame 9: Stacked Bar Plot of Date versus Number of Cases from Year 2014 to Year 2017 by Case Type 
+```{r}
+library(ggplot2)
+library(tidyr)
+library(cowplot)
+SC5 <- read.csv(file.choose())
+
+SC5_new1a = pivot_longer(SC5, cols = c("Jan.2014",
+"Feb.2014","Mar.2014","Apr.2014","May.2014","Jun.2014","Jul.2014","Aug.2014",
+"Sep.2014","Oct.2014","Nov.2014","Dec.2014"),
+names_to = "Y2014",
+values_to = "Y2014.count")
+
+
+SC5_new1b = pivot_longer(SC5_new1a, cols = c("Jan.2015",
+"Feb.2015","Mar.2015","Apr.2015","May.2015","Jun.2015","Jul.2015","Aug.2015",
+"Sep.2015","Oct.2015","Nov.2015","Dec.2015"),
+names_to = "Y2015",
+values_to = "Y2015.count")
+
+
+SC5_new1c = pivot_longer(SC5_new1b, cols = c("Jan.2016",
+"Feb.2016","Mar.2016","Apr.2016","May.2016","Jun.2016","Jul.2016","Aug.2016",
+"Sep.2016","Oct.2016","Nov.2016","Dec.2016"),
+names_to = "Y2016",
+values_to = "Y2016.count")
+
+
+SC5_new1d = pivot_longer(SC5_new1c, cols = c("Jan.2017",
+"Feb.2017","Mar.2017","Apr.2017","May.2017","Jun.2017","Jul.2017","Aug.2017",
+"Sep.2017","Oct.2017","Nov.2017","Dec.2017"),
+names_to = "Y2017",
+values_to = "Y2017.count")
+
+
+
+top5 <- head(SC5_new1d,100000)
+
+a <- ggplot(top5,aes(x=factor(Y2014),y=Y2014.count,fill=factor(Case.Type)))+
+geom_bar(stat="identity")+ylab("Number of Cases")+xlab("Date")+labs(fill="Case Type")+
+theme(axis.ticks.x=element_blank(),axis.text.x=element_blank())+
+coord_flip()
+
+b <- ggplot(top5,aes(x=factor(Y2015),y=Y2015.count,fill=factor(Case.Type)))+
+geom_bar(stat="identity")+ylab("Number of Cases")+xlab("Date")+labs(fill="Case Type")+
+theme(axis.ticks.x=element_blank(),axis.text.x=element_blank())+
+coord_flip()
+
+c <- ggplot(top5,aes(x=factor(Y2016),y=Y2016.count,fill=factor(Case.Type)))+
+geom_bar(stat="identity")+ylab("Number of Cases")+xlab("Date")+labs(fill="Case Type")+
+theme(axis.ticks.x=element_blank(),axis.text.x=element_blank())+
+coord_flip()
+
+d <- ggplot(top5,aes(x=factor(Y2017),y=Y2017.count,fill=factor(Case.Type)))+
+geom_bar(stat="identity")+ylab("Number of Cases")+xlab("Date")+labs(fill="Case Type")+
+theme(axis.ticks.x=element_blank(),axis.text.x=element_blank())+
+coord_flip()
+
+plot_grid(a, b, c, d, labels=c("2014", "2015", "2016", "2017"), ncol = 2, nrow = 2,
+label_size = 10, hjust = -6, vjust = 1)
+```
+
+***
+
+The stacked bar plot shows the number of social media related cases for each year by month starting from 2014 to 2017. Based on the four bar charts, it can be seen that the
+mostly reported case was Fake account. However, it is shown that year by year the Fake account issue is decreasing which indicates the account holders are more aware of the 
+Fake account issues so there are low possibilities for the Fake account users to continue their crime. On the other hand, comparing year 2014 and 2017, in 2014 there were only 
+2 types of cases such as Hacked and Fake but in 2017, there exist a small increase in the type of cases where there are 5 types of cases recorded such as Fake,Hacked, Phone 
+No Posted, Ransom and Threatning. This in overall indicates that even though the existing case can be reduced year by year however there is possibilities of getting new types of 
+cases in coming years. So, the social media users need to be extra careful with their social media privacy to ensure not being one of the victims.
+
+### Frame 10: Boxplot of Number of Cases versus Case Type
+```{r}
+library(ggplot2)
+library(tidyr)
+
+SC5 <- read.csv(file.choose())
+SC5_new2 = pivot_longer(SC5, cols = c("Jan.2017",
+"Feb.2017","Mar.2017","Apr.2017","May.2017","Jun.2017","Jul.2017","Aug.2017",
+"Sep.2017","Oct.2017","Nov.2017","Dec.2017","Jan.2015",
+"Feb.2015","Mar.2015","Apr.2015","May.2015","Jun.2015","Jul.2015","Aug.2015",
+"Sep.2015","Oct.2015","Nov.2015","Dec.2015","Jan.2014",
+"Feb.2014","Mar.2014","Apr.2014","May.2014","Jun.2014","Jul.2014","Aug.2014",
+"Sep.2014","Oct.2014","Nov.2014","Dec.2014","Jan.2016",
+"Feb.2016","Mar.2016","Apr.2016","May.2016","Jun.2016","Jul.2016","Aug.2016",
+"Sep.2016","Oct.2016","Nov.2016","Dec.2016"),
+names_to = "Year",
+values_to = "total_case_count")
+
+ggplot(SC5_new2,aes(x=factor(Case.Type),y=total_case_count,fill=factor(Case.Type)))+
+geom_boxplot()+xlab("Number of Case")+ylab("Case Type")+labs(fill="Case Type")+
+coord_flip()
+```
+
+***
+
+So, in conjunction with the previous analysis, now we are interested to know more about each type of social media related cases. There are total of 11 types of social 
+media related cases such as Fake, Hacked, Other, Photo Abuse, Phone No Posted, Threatning, Email, Copyright Violation, Porn Video, Website and Ransom in descending order. 
+Among all, Fake account is the highest number of case accounted in all 4 year (2014-2017). This is because there are so many Fake accounts being created without their 
+original names. This account will be then used for social media crimes so that people wont easily identify the Fake account user's details. Hacked cases is the second 
+highest where a person's account will be hacked from another device and will be used to steal the user's details. On the other hand, there are cases like website, email 
+and Ransom which are very few in quantity but this cases need to be taken serious to avoid them getting increase in coming years. 
+
+### Frame 11: Pie Chart of Top 10 Social Media Related Cases
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+SC5 <- read.csv(file.choose())
+SC5_new2 = pivot_longer(SC5, cols = c("Jan.2017",
+"Feb.2017","Mar.2017","Apr.2017","May.2017","Jun.2017","Jul.2017","Aug.2017",
+"Sep.2017","Oct.2017","Nov.2017","Dec.2017","Jan.2015",
+"Feb.2015","Mar.2015","Apr.2015","May.2015","Jun.2015","Jul.2015","Aug.2015",
+"Sep.2015","Oct.2015","Nov.2015","Dec.2015","Jan.2014",
+"Feb.2014","Mar.2014","Apr.2014","May.2014","Jun.2014","Jul.2014","Aug.2014",
+"Sep.2014","Oct.2014","Nov.2014","Dec.2014","Jan.2016",
+"Feb.2016","Mar.2016","Apr.2016","May.2016","Jun.2016","Jul.2016","Aug.2016",
+"Sep.2016","Oct.2016","Nov.2016","Dec.2016"),
+names_to = "Year",
+values_to = "total_case_count")
+
+SC5_new2a <- SC5_new2 %>% group_by(Case.Type) %>% summarize(total_case_count=mean(total_case_count))
+
+SC5_new2b <- SC5_new2a %>%                                     
+arrange(desc(total_case_count)) %>% 
+group_by(Case.Type)%>% select("Case.Type","total_case_count")
+
+cate <- head(SC5_new2b,10)
+
+ggplot(cate,aes(x="",y=total_case_count,fill=factor(Case.Type)))+
+	geom_bar(width=1, stat="identity") +
+	labs(fill = "Case Type",
+		x = NULL,
+		y = NULL,
+		title = "Top 10 Social Media Related Cases") +
+	coord_polar("y")
+```
+
+***
+
+So, this Pie Chart is to identify the number of each social media related case type. Based on the Pie Chart, it can be seen that about more than half of the pie were 
+occupied by case type Fake, followed by Hacked and so on. In previous plot, it was abit difficult to identify the sequence of the least case types. So, here in the pie 
+chart it is clearly seen that the lowest case type is Porn Video followed by Copyright Violation, Email, Ransom, Threatning and Phone no Posted case type. So, as mentioned
+earlier this type cases need to be taken into consideration to ensure they are not increasing in coming years.
+
+### Frame 12: Conclusion
+
+
+In a nutshell, social media has both positive and negative for the users. It is vital to be extra careful with the content we share as a content creator to avoid 
+unwanted troubles and as a follower we need to be extra careful and act with humanity when commenting in other's post. Throughout the analysis, various of new informations
+were gained such as the behaviors of the followers and their interest and also the factors affecting to the number of followers includes topic category, country 
+cultures and engagement rate.  
+
+
